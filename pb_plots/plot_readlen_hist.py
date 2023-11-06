@@ -44,8 +44,8 @@ def parse_args():
         help='Array size [15]'
     )
     parser.add_argument(
-        '--xmax', '-x', type=int, default=25000,
-        help='Manually set x-axis limit [25000]'
+        '--xmax', '-x', type=int, default=35000,
+        help='Manually set x-axis limit [35000]'
     )
     parser.add_argument(
         '--bam', '-b', type=str,
@@ -191,6 +191,7 @@ def plot_concat(len_to_concat, output, arraysize, xmax):
     h.set_xlabel('Read length, bp')
     h.set_ylabel('Number of Reads')
     h.set_xticks(range(0, xmax+binsize, binsize*10))
+    h.set_xticklabels(range(0, xmax+binsize, binsize*10), rotation=45, ha='right', rotation_mode='anchor')
 
     # legend
     for idx, c in enumerate(colors):
