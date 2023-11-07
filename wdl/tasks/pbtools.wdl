@@ -41,17 +41,19 @@ task pbSkerawQC {
         echo "Skera split completed!"
 
         echo "Generating QC plots.."
-        python /usr/local/src/mdl_data_processing_workflow/pb_plots/plot_concat_hist.py \
+        gsutil -m cp -r gs://mdl_terra_sandbox/tools/pb_plots/ .
+
+        python ./pb_plots/plot_concat_hist.py \
         --csv ~{sample_id}.skera.read_lengths.csv \
         --arraysize ~{arraysize} \
         --output ~{sample_id}.concat_hist.png
 
-        python /usr/local/src/mdl_data_processing_workflow/pb_plots/plot_readlen_hist.py \
+        python ./pb_plots/plot_readlen_hist.py \
         --csv ~{sample_id}.skera.read_lengths.csv \
         --arraysize ~{arraysize} \
         --output ~{sample_id}.readlen_hist.png
 
-        python /usr/local/src/mdl_data_processing_workflow/pb_plots/plot_ligation_heatmap.py \
+        python ./pb_plots/plot_ligation_heatmap.py \
         --csv ~{sample_id}.skera.ligations.csv \
         --arraysize ~{arraysize} \
         --output ~{sample_id}.ligations_heatmap.png
@@ -63,7 +65,6 @@ task pbSkerawQC {
         echo "Copying plots to gcs path QC_plots..."
         gsutil -m cp ~{sample_id}*.png ~{outdir}QC_plots/
         echo "Copying completed!"
-
     >>>
 # ------------------------------------------------
 # Outputs:

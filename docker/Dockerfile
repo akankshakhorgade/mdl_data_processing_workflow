@@ -40,6 +40,13 @@ RUN pip install pysam
 RUN conda install -y tqdm -c conda-forge
 RUN conda install -y numpy -c conda-forge
 
-RUN git clone -b dev_skera-pbplots https://github.com/akankshakhorgade/mdl_data_processing_workflow.git
+RUN wget https://github.com/samtools/samtools/releases/download/1.9/samtools-1.9.tar.bz2 && \
+	tar jxf samtools-1.9.tar.bz2 && \
+	rm samtools-1.9.tar.bz2 && \
+	cd samtools-1.9 && \
+	./configure --prefix $(pwd) && \
+	make
+
+ENV PATH=${PATH}:/usr/local/src/samtools-1.9
 
 SHELL ["bash", "-l" ,"-c"]
