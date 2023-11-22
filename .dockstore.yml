@@ -4,7 +4,7 @@ workflows:
     primaryDescriptorPath: /wdl/pb_refine_sc_plus_bulk.wdl
     testParameterFiles:
       - /optional.json
-    name: bulk_demux
+    name: pbRefine
   - subclass: WDL
     primaryDescriptorPath: /wdl/tasks/pbtools.wdl
     testParameterFiles:
