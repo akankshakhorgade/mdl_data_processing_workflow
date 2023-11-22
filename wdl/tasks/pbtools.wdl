@@ -200,7 +200,7 @@ task pbRefine {
         set -euxo pipefail
 
         echo "Copying FL bams to local..."
-        gsutil -m cp ~{input_path}/* .
+        gsutil -m cp ~{input_path}/*.bam .
         echo "Copying input bams completed!"
 
         echo "Running Refine..."
