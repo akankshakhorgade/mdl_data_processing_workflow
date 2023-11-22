@@ -1,7 +1,7 @@
 version: 1.2
 workflows:
   - subclass: WDL
-    primaryDescriptorPath: /wdl/masseq_bulk_demux.wdl
+    primaryDescriptorPath: /wdl/pb_refine_sc_plus_bulk.wdl
     testParameterFiles:
       - /optional.json
     name: bulk_demux
