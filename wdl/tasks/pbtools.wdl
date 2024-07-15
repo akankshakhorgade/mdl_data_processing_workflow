@@ -1,24 +1,25 @@
 version 1.0
 
-task pbSkera {
+task pbSkerawQC {
     meta {
         description: "Given hifi reads, spilts MAS 8x or 16x array structure using provided adapters"
     }
-# ------------------------------------------------
-#Inputs required
+    # ------------------------------------------------
+    #Inputs required
     input {
         # Required:
         File hifi_bam
-        String sample_id
+        String? sample_id
         File mas_adapters_fasta
         Int num_threads
+        Int arraysize = 8
         String gcs_output_dir
 
         # Optional:
         Int? mem_gb
         Int? preemptible_attempts
         Int? disk_space_gb
-        Int? cpu
+        Int cpu = num_threads
         Int? boot_disk_size_gb
     }
     # Computing required disk size
@@ -28,35 +29,68 @@ task pbSkera {
     Int default_boot_disk_size_gb = 25
 
     # Mem is in units of GB
-    Int machine_mem = if defined(mem_gb) then mem_gb else default_ram
+    Int machine_mem = select_first([mem_gb,default_ram])
     String outdir = sub(sub( gcs_output_dir + "/", "/+", "/"), "gs:/", "gs://")
+
     command <<<
         set -euxo pipefail
+        
+        if [defined ~{sample_id}]; then
+            skera_id=~{sample_id} 
+        else 
+            skera_id=`basename ~{hifi_bam} | sed -e 's/.hifi_reads//g' -e 's/.bam//g'`
+        
+        echo "skera split initiated.."
+        echo ${skera_id}
+        
+        skera split -j ~{num_threads} ~{hifi_bam} ~{mas_adapters_fasta} ${skera_id}.skera.bam
+        echo "Skera split completed!"
 
-        echo ~{outdir}skera/~{sample_id}.skera.bam
-        skera split -j ~{num_threads} ~{hifi_bam} ~{mas_adapters_fasta} ~{sample_id}.skera.bam
-        echo "Copying skera out to gcs path provided..."
-        /root/google-cloud-sdk/bin/gsutil -m cp ~{sample_id}.skera.bam ~{outdir}skera/
+        echo "Generating QC plots.."
+        gsutil -m cp -r gs://mdl_terra_sandbox/tools/pb_plots/ .
 
+        python ./pb_plots/plot_concat_hist.py \
+        --csv skera_id.skera.read_lengths.csv \
+        --arraysize ~{arraysize} \
+        --output ${skera_id}.concat_hist.png
+
+        python ./pb_plots/plot_readlen_hist.py \
+        --csv ${skera_id}.skera.read_lengths.csv \
+        --arraysize ~{arraysize} \
+        --output ${skera_id}.readlen_hist.png
+
+        python ./pb_plots/plot_ligation_heatmap.py \
+        --csv ${skera_id}.skera.ligations.csv \
+        --arraysize ~{arraysize} \
+        --output ${skera_id}.ligations_heatmap.png
+
+        echo "Copying output to gcs path provided..."
+        gsutil -m cp ${skera_id}.skera.* ~{outdir}skera/
+        echo "Copying skera files completed!"
+
+        echo "Copying plots to gcs path QC_plots..."
+        gsutil -m cp ${skera_id}*.png ~{outdir}QC_plots/
+        echo "Copying completed!"
     >>>
-# ------------------------------------------------
-# Outputs:
+    # ------------------------------------------------
+    # Outputs:
     output {
         # Default output file name:
-        String skera_out        = "~{outdir}skera/~{sample_id}.skera.bam"
+        File skera_out        = "*.skera.bam"
     }
 
-# ------------------------------------------------
-# Runtime settings:
+    # ------------------------------------------------
+    # Runtime settings:
     runtime {
-    docker: "us-east4-docker.pkg.dev/methods-dev-lab/masseq-dataproc/masseq_prod:tag1"
-    memory: machine_mem + " GiB"
-    disks: "local-disk " + select_first([disk_space_gb, default_disk_space_gb]) + " HDD"
-    bootDiskSizeGb: select_first([boot_disk_size_gb, default_boot_disk_size_gb])
-    preemptible: select_first([preemptible_attempts, 0])
-    cpu: select_first([cpu, 2])
+        docker: "us-east4-docker.pkg.dev/methods-dev-lab/masseq-dataproc/masseq_prod:latest"
+        memory: machine_mem + " GiB"
+        disks: "local-disk " + select_first([disk_space_gb, default_disk_space_gb]) + " HDD"
+        bootDiskSizeGb: select_first([boot_disk_size_gb, default_boot_disk_size_gb])
+        preemptible: select_first([preemptible_attempts, 0])
+        cpu: cpu
     }
 
 }
+
 
 
