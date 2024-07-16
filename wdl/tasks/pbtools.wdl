@@ -35,7 +35,7 @@ task pbSkerawQC {
     command <<<
         set -euxo pipefail
         
-        if [ defined (~{sample_id})] ; then
+        if (defined (~{sample_id}) ; then
             skera_id=~{sample_id} 
         else 
             skera_id=`basename ~{hifi_bam} | sed -e 's/.hifi_reads//g' -e 's/.bam//g'`
